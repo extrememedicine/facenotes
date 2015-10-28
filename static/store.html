@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<HTML>
+	<head>
+		<meta charset="UTF-8">
+		<title>Add Face</title>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+	</head>
+	<body>
+		<h1 class="title">New Patient</h1>
+	<input id="patid" placeholder="Patient ID"><button id='finished' type="button">Finished</button><br>
+<video id="video" width="320" height="240" autoplay></video><br>
+<canvas id="canvas" width="320" height="240"></canvas>
+<script>
+window.addEventListener("DOMContentLoaded", function() {
+	var canvas = document.getElementById("canvas"),
+		context = canvas.getContext("2d"),
+		video = document.getElementById("video"),
+		videoObj = { "video": true },
+		errBack = function(error) {
+			console.log("Video capture error: ", error.code); 
+		};
+
+		// Put video listeners into place
+		if(navigator.getUserMedia) { // Standard
+			navigator.getUserMedia(videoObj, function(stream) {
+				video.src = stream;
+				video.play();
+			}, errBack);
+		} else if(navigator.webkitGetUserMedia) { // WebKit-prefixed
+			navigator.webkitGetUserMedia(videoObj, function(stream){
+				video.src = window.webkitURL.createObjectURL(stream);
+				video.play();
+			}, errBack);
+		}
+		else if(navigator.mozGetUserMedia) { // Firefox-prefixed
+			navigator.mozGetUserMedia(videoObj, function(stream){
+				video.src = window.URL.createObjectURL(stream);
+				video.play();
+			}, errBack);
+		}
+}, false);
+
+// Trigger photo take
+document.getElementById("video").addEventListener("click", function() {
+	context = canvas.getContext("2d");
+	context.drawImage(video, 0, 0, 320, 240);
+	var dataURL = canvas.toDataURL();
+	$.ajax({
+	  type: "POST",
+	  url: "/uploadimage",
+	  data: {
+		 patid: document.getElementById("patid").value,
+	     imgBase64: dataURL
+	  }
+	}).done(function(o) {
+	  console.log('saved');
+	  window.setTimeout(function(){ context.clearRect(0, 0, canvas.width, canvas.height);}, 1500);
+	  
+
+	});
+});
+
+document.getElementById("finished").addEventListener("click", function() {
+	$.ajax({
+	  type: "POST",
+	  url: "/rebuild",
+	  data: {
+		 patid: document.getElementById("patid").value
+	  }
+	}).done(function(o) {
+		console.log(o);
+		window.location = '/s/index.html';
+	});
+});
+
+
+</script>
+	</body>
+</HTML>

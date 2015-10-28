@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<HTML>
+	<head>
+		<meta charset="UTF-8">
+		<title>Find Patient</title>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+	</head>
+	<body>
+		<h1 class="title">Find Patient</h1>
+<video id="video" width="320" height="240" autoplay></video><br>
+<canvas id="canvas" width="320" height="240"></canvas>
+<script>
+window.addEventListener("DOMContentLoaded", function() {
+	var canvas = document.getElementById("canvas"),
+		context = canvas.getContext("2d"),
+		video = document.getElementById("video"),
+		videoObj = { "video": true },
+		errBack = function(error) {
+			console.log("Video capture error: ", error.code); 
+		};
+
+		// Put video listeners into place
+		if(navigator.getUserMedia) { // Standard
+			navigator.getUserMedia(videoObj, function(stream) {
+				video.src = stream;
+				video.play();
+			}, errBack);
+		} else if(navigator.webkitGetUserMedia) { // WebKit-prefixed
+			navigator.webkitGetUserMedia(videoObj, function(stream){
+				video.src = window.webkitURL.createObjectURL(stream);
+				video.play();
+			}, errBack);
+		}
+		else if(navigator.mozGetUserMedia) { // Firefox-prefixed
+			navigator.mozGetUserMedia(videoObj, function(stream){
+				video.src = window.URL.createObjectURL(stream);
+				video.play();
+			}, errBack);
+		}
+}, false);
+
+// Trigger photo take
+document.getElementById("video").addEventListener("click", function() {
+	context = canvas.getContext("2d");
+	context.drawImage(video, 0, 0, 320, 240);
+	var dataURL = canvas.toDataURL();
+	$.ajax({
+	  type: "POST",
+	  url: "/find",
+	  data: {
+	     imgBase64: dataURL
+	  }
+	}).done(function(o) {
+	  console.log('saved');
+      console.log(o);
+	  document.getElementById("video").remove()
+	  context.font = "30px Arial";
+	  context.fillText(o,10,50);
+	});
+});
+
+</script>
+	</body>
+</HTML>
